@@ -187,7 +187,7 @@ Using the \textit{connected\_components()} method we calculated the number of co
 
 \subsubsection{Path analysis} The diameter measures 12 and the average shortest path corresponds to 4.31. We can notice that the average shortest path is 1/3 of the diameter.
 
-\subsubsection{Global clustering coefficient and Density} The coefficient is equal to 0.045, which is a low value, meaning that the nodes on the graph have a low tendency to form closely related groups or clusters. Additionally, the density is 0.00042: it suggests the graph is relatively sparse, since the density indicates the fraction of connections actually present compared to the maximum number of connections possible. In this case there are few connections between nodes.
+\subsubsection{Global clustering coefficient and Density} The coefficient is equal to 0.045, which is a low value, meaning that the nodes on the graph have a low tendency to form closely related groups or clusters and there is an high number of weak ties. Additionally, the density is 0.00042: it suggests the graph is relatively sparse, since the density indicates the fraction of connections actually present compared to the maximum number of connections possible. In this case there are few connections between nodes.
 
 \subsubsection{Centrality analysis}  
 Firstly, we investigated the number of interactions of each node by computing their degree centrality. The following table shows the top five nodes with the highest degree.
@@ -349,7 +349,7 @@ In terms of nodes degree, the difference between the random network predictions 
 \section{Network Manipulation and Analysis}
 
 \subsection{Community detection}
-This analysis focuses on discovering the network's structure, comparing and evaluating the results of the identified communities. 
+This analysis focuses on discovering the network's structure, comparing and evaluating the results of the identified communities, using Cdlib \cite{Cdlib} library. 
 Concerning crisp communities, the algorithms used are Louvain and Leiden.
 Louvain algorithm has two phases repeated iteratively. Each node begins in its own community, then moves to the adjacent community that offers the biggest modularity boost. The graph is updated with communities connected by weighted links and bridges.
 Leiden algorithm works as a hierarchical clustering that merges communities into single nodes. 
@@ -364,7 +364,7 @@ Community-based evaluation is implemented through two strategies: internal evalu
 {\fontsize{10}{10}\selectfont \textit{Internal Evaluation }}
 
 \begin{itemize}
-  \item [-]\textbf{Conductance}: the fraction of total edge volume that points outside the community. \newline
+  \item [-]\textbf{Conductance}: the fraction of total edge volume that points outside the community. Particularly, lower values are better than the higher ones.  \newline
 \begin{center}
 $f(S) = \displaystyle\frac{cS}{2mS + cS}$
 \end{center}
@@ -377,7 +377,7 @@ In the formula \textit{cs} stands for number of community nodes and \textit{ms} 
 \end{itemize}
 
 \begin{itemize}
-\item [-]\textbf{Internal edge density}: the proportion of arcs connecting nodes within a specific community to the total number of possible arcs within that community
+\item [-]\textbf{Internal edge density}: the proportion of edges connecting nodes within a specific community to the total number of possible edges within that community. Specifically, lower values are better. 
 \vspace{4pt}
 
 \begin{center}
@@ -397,33 +397,74 @@ where \textit{mS} is the number of community internal edges and \textit{nS} is t
  
 
 \begin{itemize}
-  \item [-]\textbf{Overlapping Normalized Mutual Information} between two clusterings.
+  \item [-]\textbf{Overlapping Normalized Mutual Information LFK} between two clusterings. It's an extension of the Normalized Mutual Information (NMI) score to cope with overlapping partitions.
+\begin{flushleft}
+  \[
+ONMI =\displaystyle\frac{{MI(P, R)}}{{\sqrt{{H(P) \cdot H(R)}}}}
+\]
+where \textit{MI(P, R)} represents the mutual information between the partition P and the reference labels R. \textit{H(P)} is the entropy of the partition P and \textit{H(R)} is the entropy of the R reference labels.
+The value obtained is between 0 and 1, where 1 indicates a perfect match between the overlapping partition and the reference labeling, while values closer to 0 indicate less similarity.
+ \end{flushleft}
 
 \vspace{5pt}
-\item [-]\textbf{F1 score}: matches among the partitions
+\item [-]\textbf{F1 score}: used to measure the quality of partitions obtained from the community detection algorithm. 
+
+
+\[
+F1 = \displaystyle\frac{{2 \cdot (precision \cdot recall)}}{{(precision + recall)}}
+\]
+\begin{flushleft}
+where \textit{precision} measures the proportion of correctly detected items to total detected items and \textit{recall} indicates the proportion of correctly detected positive items to the total number of positive items present.
+\end{flushleft}
 \end{itemize}
 
 
 \begin{table}[htbp]
 \centering
-\caption{Community detection}
+\caption{Internal evaluation results}
 \adjustbox{scale=0.8}{
 \begin{tabular}{cccccr}
 \toprule
- & Parameter(s) & \#Community & Conductance & Altro \\
+ & Parameter(s) & \#Community & Conductance & Internal edge density \\
 \midrule
-Louvain & Resolution:2 &392 & 0.126 &  \\
-Leiden & None & 335 & 0.046 \\
-Demon & $\epsilon$:0.25 &110 &0.85\\
-Angel & threshold:0.25 &1 &0.019\\
+Louvain & Resolution:2 &383 & 0.12 & 0.46 \\
+Leiden & None & 335 & 0.047 & 0.53  \\
+Demon & $\epsilon$:0.25 &110 &0.85 &0.11\\
+k-clique & K:3 &602 &0.87 &1.18\\
 \bottomrule
 \end{tabular}
 }
 \end{table}
 
-[DA AGGIUNGERE]GRAFICI FINALI E COMMENTI 
 
+Concerning conductance, the best values are represented by Louvain and Leiden algorithms, so they show an internal cohesion respect to Demon and K-clique. For internal edge density the ones who performed better are K-clique and Leiden, indicating that nodes within the community are fully connected to each other. 
 
+\begin{table}[htbp]
+\centering
+\caption{External evaluation results}
+\adjustbox{scale=0.8}{
+\begin{tabular}{cccr}
+\toprule
+ Partitions & ONMI LK & F1 score  \\
+\midrule
+Louvain and Leiden  & 0.83 &0.81 \\
+Demon and k-clique & 0.05 &0.07\\
+\bottomrule
+\end{tabular}
+}
+\label{tab:external}
+\end{table}
+
+In Table \ref{tab:external} we can observe that the best results are related to Louvain and Leiden partitions, which reveal almost complete match regarding overlapping partition. While the F1 score indicate that they have a better quality community partition, i.e. nodes have been classified with greater accuracy, than Demon and k-clique.
+
+Another way to compare the different communities, taking into account a particular evaluation measure, can be obtained using an heatmap (Figure ~\ref{fig:immagine_heat_com}).  
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{nf1.png}
+  \caption{Heatmap of different communities by nf1 evaluation}
+  \label{fig:immagine_heat_com}
+\end{figure}
 \FloatBarrier
 
 \subsection{Spreading}
@@ -548,30 +589,28 @@ We note that nodes and edges correspond precisely to those in Snapshot 2 in the 
 
 \noindent \subsubsection{Dynamic Network Measures} Finally, in the next tables we can observe the measurements performed on the constructed Dynamic Graph, some of which refer to two generic nodes u and v, chosen randomly.
 
-\noindent The first measures, reported in Table \ref{tab:Inter Event Time Measures}, regard the Inter Event Time Measure (IET), that indicates how much time occurs before a new interaction appears in the graph. 
+\noindent The first measures, reported in Table \ref{tab:Inter Event Time Measures}, regard the Inter Event Time Measure (IET), that indicates how much time occurs before a new interaction appears in the graph.
 
-\begin{table}[!ht]
+\begin{table}[ht]
 \centering
-\caption{Inter Event Time Measures }
+\caption{Inter Event Time Measures}
 \label{tab:Inter Event Time Measures}
-\begin{tabular}{|c|c|}
+\begin{tabular}{|p{3cm}|p{3cm}|}
 \hline
 \textbf{IET} & \textbf{N. Interactions} \\ \hline
-\textbf{Global} & \begin{tabular}[c]{@{}c@{}}temporal distance\\ \{0: 34728, 1: 3\}\end{tabular} \\ \hline
-\textbf{Node} & \begin{tabular}[c]{@{}c@{}}temporal distance\\ \{0: 2, 2: 1\}\end{tabular} \\ \hline
-\textbf{Edge} & \begin{tabular}[c]{@{}c@{}}temporal distance \\ \{3: 1\}\end{tabular} \\ \hline
+\textbf{Global} & \begin{tabular}[c]{@{}p{3cm}@{}}temporal distance\\ \{0: 34728, 1: 3\}\end{tabular} \\ \hline
+\textbf{Node} & \begin{tabular}[c]{@{}p{3cm}@{}}temporal distance\\ \{0: 2, 2: 1\}\end{tabular} \\ \hline
+\textbf{Edge} & \begin{tabular}[c]{@{}p{3cm}@{}}temporal distance \\ \{3: 1\}\end{tabular} \\ \hline
 \end{tabular}
 \end{table}
 
 We can notice that in the value of Global measurement, therefore taking into account the whole month, just in one of the four snapshots there are three new interactions.
 
-In the Table \ref{tab:Dynamic Network Measures} below, instead, are reported the measure of: \textit{Coverage} (C) that is the ratio of existing nodes w.r.t. the possible ones; \textit{Coverage of Node/Edge} (CNE) which reports the coverage of w.r.t. a node 'u' and of edge (u, v), \textit{Pair Uniformity} (PU) that is the overlap between the presence times of u and v; \textit{Density} (D) that indicates the temporal network density, which is the fraction of possible interactions that do exist in the temporal network and \textit{Node Density}, (ND) \textit{Pair Density} (PD) which respectively indicate the intersection between the node/edge's temporal presence and the joint node/edge's temporal presences.
+In Table \ref{tab:Dynamic Network Measures} below, instead, are reported the measures of: \textit{Coverage}(C) that is the ratio of existing nodes w.r.t. the possible ones; \textit{Coverage of Node/Edge} (CNE) which reports the coverage of w.r.t. a node ’u’ and of edge (u, v), \textit{Pair Uniformity} (PU) that is the overlap between the presence times of u and v; \textit{Density} (D) that indicates the temporal network density, which is the fraction of possible interactions that do exist in the temporal network and \textit{Node Density} (ND), \textit{Pair Density} (PD) which respectively indicate the intersection between the node/edge’s temporal presence and the joint node/edge’s temporal presences.
 
-\vspace{10pt}
-
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
-\begin{tabular}{|c|c|}
+\begin{tabular}{|p{3cm}|p{3cm}|}
 \hline
 \textbf{Measure} & \textbf{Value} \\ \hline
 C & 0.59 \\ \hline
@@ -585,22 +624,19 @@ PD & 1.0 \\ \hline
 \label{tab:Dynamic Network Measures}
 \end{table}
 
+The \textit{Snapshot Density} measure, on the other hand, shows us that the Snapshot Networks taken individually all give very low values, with the densest being the one at snapshot one with a value of 0.0020, consistent with the observed density of a single node w.r.t. the entire graph in Table \ref{tab:Dynamic Network Measures}; as the network grows, it decreases more and more, emphasizing the increase in edges but the sparsity of the inspected network.
 
-The \textit{Snapshot Density} measure, on the other hand, shows us that the Snapshot Networks taken individually all give very low values, with the densest being the one at snapshot one with a value of 0.0020, consistent with the observed density of a single node w.r.t. the entire graph in Table \ref{tab:Dynamic Network Measures}; as the network grows it decreases more and more, emphasising the increase in edges but the sparsity of inspected network.
-
-\subsubsection{Study of stability} The stability study was done to observe changes over time between snapshots by questioning four metrics: Jaccard Coefficient, Clustering Coefficient, Degree Centrality and a comparison of the Degree Distribution.
-\\
+\subsubsection{Study of stability}
+The stability study was done to observe changes over time between snapshots by questioning four metrics: Jaccard Coefficient, Clustering Coefficient, Degree Centrality, and a comparison of the Degree Distribution.
 
 \noindent The \textit{Jaccard Coefficient}: the highest value was recorded between Snapshots at time t=2 and t=3 with 0.67 which tells us that there were few changes in that timeframe, i.e. there was a low addition to the exchange of responses; whereas the lowest value was recorded between Snapshots at time t=0 and t=1 with 0.22, which tells us that there were few nodes that interacted with each other between the first and second week.
-\\
 
 \noindent The \textit{Clustering Coefficient}: The highest value was recorded in the Snapshot at time t=0 with 0.057 which tends to decrease slightly until the last Snapshot at time t=3 with 0.043.
 They both remain very small values, which indicate that the tendency of a node's neighbours to be connected to each other is very low from the start, and as the network grows this tends to decrease.
-\\
 
 \noindent The \textit{Degree Centrality}: as the results we obtained show, the node that has the highest degree centrality in every snapshot is \textit{'hi\_there\_bitch'}, which has the value of 0.11 at time t = 2. Despite this fact, the values of degree centrality of all nodes prove that the network is sparse at all times.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=0.4\textwidth]{img/dd_snapshot.png}
   \caption{Degree Distribution of each Snapshot}
@@ -611,7 +647,7 @@ They both remain very small values, which indicate that the tendency of a node's
 In conclusion, as we can see in the Figure \ref{fig:Degree Distribution Snapshot} there are few changes in density, taking into account a total time window of one month, indicating again that the network is evolving over time, growing slowly.
 
 \section{open questions}
-In this section we investigate which are the main subject areas the comments fall into. The research question we asked ourselves was: \textit{`In which topics is chatGPT most used/discussed by users?'}. In order to determine that, we carried out a topic modeling analysis. We used a transformer-based model named BERTopic, which is an open-source library that uses a BERT model to do Topic Detection with an TF-IDF (Term Frequency - Inverse Document Frequency) algorithm that weights the importance of words in a corpus. The importance depends on the word's frequency: the more frequent a word is, the more important it is. The aim of the analysis is to get an overview of the main topics of the comments we retrieved.\\
+In this section we investigate which are the main subject areas the comments fall into. The research question we asked ourselves was: \textit{`In which topics is chatGPT most used/discussed by users on Reddit?'}. In order to determine that, we carried out a topic modeling analysis. We used a transformer-based model named BERTopic \cite{BERTopic}, which is an open-source library that uses a BERT model to do Topic Detection with an TF-IDF (Term Frequency - Inverse Document Frequency) algorithm that weights the importance of words in a corpus. The importance depends on the word's frequency: the more frequent a word is, the more important it is. The aim of the analysis is to get an overview of the main topics of the comments we retrieved.\\
 
 We prepared the data with a pre-processing that included the removal of the stop words, since their high frequency can cheat the extraction. We also looked for capital letters and special characters. After this verification, the list of the comments was submitted to the model. 
 Only a small representative portion of 1300 comments was given. \\ The topics extracted were visualized through different kinds of graphs. The most relevant is the barchart (Figure ~\ref{fig:immagine_bar}) and it shows the main topics identified and for each one it displays the internal subjects covered. 
@@ -641,7 +677,7 @@ After the recognition of the main topics, other specific analyses are carried ou
 
 
 \subsection{Insight into the topics}
-After the topic identification by Bert, an in-depth study about them is developed to understand more specifically what people could ask to chatGPT in relation to the different arguments identified. The analysis starts from the Named-Entity Recognition (NER), a method that extracts information from the given text. It consists of identifying the named entities referring to the key topics of the text, in this case comments, such as names, locations, companies, products, events. First, the comments about that topic are extracted by using topic keywords such as \textit{history}, \textit{game}, \textit{Microsoft}, \textit{math}. The NER process is accomplished by considering only \textsc{PER}, which is the name of people, and \textsc{ORG}, which is the name of different types of organizations. Frequency of words is achieved by obtaining key words that can inform about the most commonly discussed topic among people. Lastly, a graphic linking the keywords, represented by nodes, is constructed. The number of words is not a fixed number, as everything is dependent on the topic. 
+After the topic identification by Bert, an in-depth study about them is developed to understand more specifically what people could ask to ChatGPT in relation to the different arguments identified. The analysis starts from the Named-Entity Recognition (NER) \cite{NER}, a method that extracts information from the given text. It consists of identifying the named entities referring to the key topics of the text, in this case comments, such as names, locations, companies, products, events. First, the comments about that topic are extracted by using topic keywords such as \textit{history}, \textit{game}, \textit{Microsoft}, \textit{math}. The NER process is accomplished by considering only \textsc{PER}, which is the name of people, and \textsc{ORG}, which is the name of different types of organizations. Frequency of words is achieved by obtaining key words that can inform about the most commonly discussed topic among people. Lastly, a graphic linking the keywords, represented by nodes, is constructed. The number of words is not a fixed number, as everything is dependent on the topic. 
  
 
 \begin{figure}[H]
@@ -677,25 +713,31 @@ After the topic identification by Bert, an in-depth study about them is develope
 
 In the following results what emerges are words related to topics. The first graph ~(Figure \ref{fig:immagine_history}) about history contains terms such as \textit{Shakespeare}, \textit{enemies}, \textit{method}, \textit{writing}, \textit{cultures}. It could be possible that people asked ChatGPT to help them with a task, for instance writing an article or looking for one.
 
-In the second one ~(Figure \ref{fig:immagine_game}), that concerns the gaming area, there are several common words such as \textit{dangers}, \textit{method}, \textit{technological}, \textit{enemies}. Probably the users talk about these games to ChatGPT to find some strategies or just to take some information. 
+In the second one ~(Figure \ref{fig:immagine_game}), that concerns the gaming area, there are several common words such as \textit{dangers}, \textit{method}, \textit{technological}, \textit{enemies}. Probably users talk about games to ChatGPT to find some strategies or just to take some information. 
 
-The third graph ~(Figure \ref{fig:immagine_mi}) is regarded to Microsoft, so what is expected is to find some technological terms, indeed there are words as \textit{cloud}, \textit{avalaible}, \textit{apple}, but what is stranger is to find term like \textit{hitler}, that should belong to the history topic. In the math topic graph ~(Figure \ref{fig:immagine_math}) there are few words connected to the argument as \textit{Leibniz}, \textit{solver}, \textit{sample}, \textit{specifically}, but the majority of the words are not relevant.
+The third graph ~(Figure \ref{fig:immagine_mi}) is related to Microsoft, so what is expected is to find some technological terms, indeed there are words as \textit{cloud}, \textit{avalaible}, \textit{apple}, but what is stranger is to find terms like \textit{hitler}, that should belong to the history topic. In the math topic graph ~(Figure \ref{fig:immagine_math}) there are few words connected to the argument as \textit{Leibniz}, \textit{solver}, \textit{sample}, \textit{specifically}, but the majority of the words are not relevant.
+These last two graphs are the ones that show the highest amount of noise; nevertheless, it is possible to infer some information about the area they cover.
 
-\subsubsection{Sentiment analysis} Through this analysis the general idea of the users' opinion about ChatGPT can be inferred. The library used is TextBlob, which is a Python library for natural language processing (NLP) that simplifies information extraction from text and offers features such as sentiment analysis, sentence extraction, tokenization, lemmatization, part-of-speech classification, and more. As first step the stop words are removed to avoid having particular influences in the analysis. For each sentence is computed the \textit{sentiment} which is delivered as a score; in relation to it the sentence can be classified as Positive (score greater than 0), Negative (score less than 0), of Neutral(other score values). The visual distribution is realized by a bar chart (Figure ~\ref{fig:immagine_sentiment}) , which discloses that the majority of the opinions about Chat GPT are rated as positive. 
+
+
+\subsubsection{Sentiment analysis} Through this analysis the general idea of the users' opinion about ChatGPT can be interpreted. The library used is \textit{TextBlob} \cite{TextBlob}, which is a Python library for natural language processing (NLP) that simplifies information extraction from text and offers features such as sentiment analysis, sentence extraction, tokenization, lemmatization, part-of-speech classification, and more. For each sentence the \textit{sentiment} is computed and it is delivered as a score; in relation to it the sentence can be classified as Positive (score greater than 0), Negative (score less than 0), or Neutral (other score values). The visual distribution is realized by a barchart (Figure ~\ref{fig:immagine_sentiment}) , which discloses that the majority of the opinions about ChatGPT are rated as positive. 
 
 \begin{figure}[H]
   \centering
-  \includegraphics[height=5cm]{sentiment.png}
+  \includegraphics[width=0.6\textwidth]{sentiment.png}
   \caption{Sentiment analysis about Chat GPT}
   \label{fig:immagine_sentiment}
 \end{figure}
 
+\newpage
+\section{Discussion}
+In this project, we have investigated the interactions among the exchange of comments of Reddit users, with the final goal to answer the research question of: ‘In which topics is ChatGPT most discussed?'.
+The data collection phase was carried out by drawing from a backup of the ChatGPT subreddit dated December 2022.
+The analysis of the network structure shows the network is sparse because of the low clustering coefficient, low density and the small average shortest path.
+An analysis of the dynamic version of the network was carried out: we noticed that the number of edges constantly increases over the weeks and that between the time slices analysed there is coherence underlining the evolution of the network linked to its sparsity.
+Lastly, using BERTopic to do a topic modeling analysis, we found the main topics that the comments belong to. The ones that gave the best results were history and gaming.
 
-\section{Discussion (and Conclusion)}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-% The next two lines define the bibliography style to be used, and the bibliography file.
+\newpage
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{biblio}
 
